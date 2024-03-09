@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:6.0-ubuntu2204
+    restart: 'no'
+    env_file: ./.env
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=$MONGODB_USER
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGODB_PASSWORD
+      - MONGO_INITDB_DATABASE=$MONGODB_DB
+    ports:
+      - $MONGODB_LOCAL_PORT:$MONGODB_DOCKER_PORT
+    volumes:
+      - db:/data/db
+    networks:
+      vpcbr-node:
+        ipv4_address: 10.0.60.30
+  app:
+    depends_on:
+      - mongodb
+    build: ./men-app
+    restart: 'no'
+    env_file: ./.env
+    ports:
+      - $NODE_LOCAL_PORT:$NODE_DOCKER_PORT
+    environment:
+      - DB_HOST=mongodb
+      - DB_USER=$MONGODB_USER
+      - DB_PASSWORD=$MONGODB_PASSWORD
+      - DB_NAME=$MONGODB_DB
+      - DB_PORT=$MONGODB_DOCKER_PORT
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./men-app:/usr/src/webserver
+    networks:
+      vpcbr-node:
+        ipv4_address: 10.0.60.40
+
+volumes:
+  db:
+
+networks:
+  vpcbr-node:
+    driver: bridge
+    ipam:
+      config:
+       - subnet: 10.0.60.0/24
+         gateway: 10.0.60.1
