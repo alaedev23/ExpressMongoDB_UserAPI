@@ -1,5 +1,6 @@
 import '../db/connection.js';
-import User from'../db/models/user.schema.js';
+import Nota from '../db/models/nota.schema.js';
+import User from '../db/models/user.schema.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -25,15 +26,17 @@ userManagement.loginUser = async (req, res) => {
             });
         }
 
-        const token = jwt.sign({ user_id : user._id }, process.env.JWT_SECRET_KEY);
+        const token = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET_KEY);
         res.cookie('token', token, { httpOnly: true });
 
         res.status(200).json({
             message: 'Login successful! Welcome to the app!',
             user: {
+                id: user._id,
                 name: user.name,
                 surname: user.surname,
-                email: user.email
+                email: user.email,
+                token
             }
         });
 
@@ -58,12 +61,42 @@ userManagement.registerUser = async (req, res) => {
 
         // Password Strength
 
-        // const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
-        // if (!passwordRegex.test(password)) {
-        //     return res.status(400).json({
-        //     error: 'Password must contain at least 8 characters and include both letters and numbers'
-        //     });
-        // }
+        if (password.length < 8) {
+            return res.status(400).json({
+                value: "password",
+                error: 'Password must be at least 8 characters long'
+            });
+        }
+
+        if (!/[a-zA-Z]/.test(password)) {
+            return res.status(400).json({
+                value: "password",
+                error: 'Password must contain at least one letter'
+            });
+        }
+
+        if (!/\d/.test(password)) {
+            return res.status(400).json({
+                value: "password",
+                error: 'Password must contain at least one number'
+            });
+        }
+
+        const nameRegex = /^[^\d]+$/;
+        if (!nameRegex.test(name)) {
+            return res.status(400).json({
+                value: "name",
+                error: 'Name cannot contain numbers'
+            });
+        }
+
+        const surnameRegex = /^[^\d]+$/;
+        if (!surnameRegex.test(surname)) {
+            return res.status(400).json({
+                value: "surname",
+                error: 'Surname cannot contain numbers'
+            });
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -89,7 +122,8 @@ userManagement.registerUser = async (req, res) => {
 
 userManagement.logoutUser = (req, res) => {
     try {
-        res.clearCookie('token');
+        // res.clearCookie('token');
+
         res.status(200).json({
             message: 'Logout successful! Goodbye!'
         });
@@ -102,7 +136,15 @@ userManagement.logoutUser = (req, res) => {
 
 userManagement.deleteUser = async (req, res) => {
     try {
-        const { userId } = req.params;
+
+        if (req.user_id != req.body.id) {
+            res.status(400).json({message: 'Author error'});
+        }
+
+        const userId = req.user_id;
+
+        await Nota.deleteMany({ author: userId });
+
         await User.findByIdAndDelete(userId);
         res.status(200).json({
             message: 'User deleted successfully'
@@ -116,7 +158,12 @@ userManagement.deleteUser = async (req, res) => {
 
 userManagement.updateUser = async (req, res) => {
     try {
-        const { userId } = req.params;
+
+        if (req.user_id != req.body.id) {
+            res.status(400).json({message: 'Author error'});
+        }
+
+        const userId = req.user_id;
         const { name, surname, email, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
         const updatedUser = {

@@ -27,28 +27,26 @@ app.post('/user/logout', userManagement.logoutUser);
 
 app.post('/user/register', userManagement.registerUser);
 
-app.post('/user/delete', privateRoute, userManagement.deleteUser);
+app.delete('/user/delete', privateRoute, userManagement.deleteUser);
 
-app.post('/user/update', privateRoute, userManagement.updateUser);
+app.put('/user/update', privateRoute, userManagement.updateUser);
 
 // Notes
 
-app.post('/nota/create', privateRoute, notaManagement.createNota);
+app.put('/nota/create', privateRoute, notaManagement.createNota);
 
-app.post('/nota/list', privateRoute, notaManagement.listAuthorNotas);
+app.get('/nota/list', privateRoute, notaManagement.listAuthorNotas);
 
-app.post('/nota/find', privateRoute, notaManagement.findNota);
+// app.get('/nota/find/:notaId', privateRoute, notaManagement.findNota);
 
-app.post('/nota/delete', privateRoute, notaManagement.deleteNota);
+app.delete('/nota/delete/:id', privateRoute, notaManagement.deleteNota);
 
-app.post('/nota/update', privateRoute, notaManagement.updateNota);
+app.put('/nota/update', privateRoute, notaManagement.updateNota);
 
-// Routes for future versions
+// app.delete('/', (req, res) => {
+//     res.send('DELETE Request');
+// });
 
-app.delete('/', (req, res) => {
-    res.send('DELETE Request');
-});
-
-app.put('/', (req, res) => {
-    res.send('PUT Request');
-});
+// app.put('/', (req, res) => {
+//     res.send('PUT Request');
+// });
